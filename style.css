@@ -1,31 +1,63 @@
 body {
     margin: 0;
-    overflow: hidden;
-    font-family: sans-serif;
-    color: white;
-    background-color: black; /* A-Frameの背景が透過するため */
+    overflow: hidden; /* スクロールバーを非表示 */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #000; /* fallback background */
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* ビューポートの高さに合わせる */
+}
+
+#ar-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    z-index: 1; /* Three.jsの描画が他のUI要素の下にならないように */
 }
 
 #ar-button-container {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999; /* 他の要素より手前に表示 */
+    position: fixed; /* 画面に固定 */
+    bottom: 20px; /* 下から20pxの位置 */
+    left: 50%; /* 左端から50%の位置 */
+    transform: translateX(-50%); /* 中央揃え */
+    z-index: 10; /* 他の要素より手前に表示 */
+    display: flex;
+    flex-direction: column; /* 要素を縦に並べる */
+    align-items: center; /* 中央揃え */
+    gap: 10px; /* 要素間の隙間 */
 }
 
 #ar-start-button {
-    padding: 15px 30px;
-    font-size: 1.2em;
-    background-color: #4CAF50; /* 緑色 */
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    transition: background-color 0.3s ease;
+    padding: 15px 35px; /* ボタンの内側の余白 */
+    font-size: 1.25em; /* フォントサイズ */
+    font-weight: bold; /* フォントの太さ */
+    color: #fff; /* 文字色 */
+    background-color: #007bff; /* ボタンの背景色（青） */
+    border: none; /* ボーダーなし */
+    border-radius: 30px; /* 角を丸くする */
+    box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4); /* 影 */
+    cursor: pointer; /* マウスカーソルをポインターに */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* ホバーアニメーション */
 }
 
 #ar-start-button:hover {
-    background-color: #45a049;
+    background-color: #0056b3; /* ホバー時の背景色 */
+    transform: translateX(-50%) scale(1.05); /* ホバー時に少し拡大 */
+}
+
+#ar-start-button:active {
+    background-color: #004085; /* クリック時の背景色 */
+    transform: translateX(-50%) scale(0.98); /* クリック時に少し縮小 */
+}
+
+#message-text {
+    font-size: 1.1em;
+    color: #ccc;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5); /* 文字の影 */
+    display: none; /* 初期状態では非表示 */
 }

@@ -1,40 +1,21 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>AR Bird App</title>
-    <script src="https://unpkg.com/aframe@1.4.2/dist/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
-    <style>
-      body, html {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-      }
-      #ar-container {
-        width: 100vw;
-        height: 100vh;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="ar-container">
-      <a-scene
-        mindar-image="imageTargetSrc: ./marker.mind; autoStart: true; uiScanning: true;"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: true"
-        embedded
-      >
-        <a-assets>
-          <img id="bird" src="bird.gif" />
-        </a-assets>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>AR空間のGIF魚</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="ar-canvas"></canvas>
 
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-        <a-entity mindar-image-target="targetIndex: 0">
-          <a-image src="#bird" position="0 0 0" width="1" height="1"></a-image>
-        </a-entity>
-      </a-scene>
+    <div id="ar-button-container">
+        <button id="ar-start-button">ARを開始</button>
+        <p id="message-text">平面を探しています...</p>
     </div>
-  </body>
+
+    <script async src="https://unpkg.com/three@0.165.0/build/three.min.js"></script>
+    
+    <script src="script.js"></script>
+</body>
 </html>
