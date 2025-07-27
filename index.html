@@ -44,8 +44,8 @@
 
         .goldfish {
             position: absolute;
-            width: 60px;
-            height: 40px;
+            width: 360px;
+            height: 240px;
             transition: all 0.5s ease-in-out;
             transform-style: preserve-3d;
         }
@@ -53,44 +53,20 @@
         .goldfish-body {
             width: 100%;
             height: 100%;
-            background: linear-gradient(45deg, #ff6b35, #ffa500, #ff8c00);
-            border-radius: 50% 10% 50% 10%;
+            background-image: url('fish.gif');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             position: relative;
-            box-shadow: 0 0 15px rgba(255, 165, 0, 0.6);
+            filter: drop-shadow(0 0 10px rgba(255, 165, 0, 0.4));
             animation: swim 3s ease-in-out infinite;
         }
 
-        .goldfish-tail {
-            position: absolute;
-            right: -15px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 20px;
-            height: 25px;
-            background: linear-gradient(45deg, #ff8c00, #ff6b35);
-            border-radius: 0 50% 50% 0;
-            animation: tail-wave 1s ease-in-out infinite;
-        }
-
-        .goldfish-eye {
-            position: absolute;
-            left: 10px;
-            top: 12px;
-            width: 8px;
-            height: 8px;
-            background: radial-gradient(circle, #000 30%, #fff 40%, transparent 70%);
-            border-radius: 50%;
-        }
-
+        /* GIF画像を使用する場合、これらの要素は非表示にします */
+        .goldfish-tail,
+        .goldfish-eye,
         .goldfish-fin {
-            position: absolute;
-            bottom: -8px;
-            left: 15px;
-            width: 12px;
-            height: 15px;
-            background: linear-gradient(45deg, rgba(255, 140, 0, 0.7), rgba(255, 107, 53, 0.7));
-            border-radius: 50% 0 50% 0;
-            animation: fin-wave 1.5s ease-in-out infinite;
+            display: none;
         }
 
         @keyframes swim {
@@ -98,15 +74,7 @@
             50% { transform: translateY(-5px) rotateY(5deg); }
         }
 
-        @keyframes tail-wave {
-            0%, 100% { transform: translateY(-50%) rotateZ(0deg); }
-            50% { transform: translateY(-50%) rotateZ(-10deg); }
-        }
-
-        @keyframes fin-wave {
-            0%, 100% { transform: rotateZ(0deg); }
-            50% { transform: rotateZ(15deg); }
-        }
+        /* tail-wave と fin-wave アニメーションは不要なので削除 */
 
         .bubble {
             position: absolute;
@@ -293,11 +261,7 @@
                 goldfish.style.top = `${posY}%`;
                 
                 goldfish.innerHTML = `
-                    <div class="goldfish-body">
-                        <div class="goldfish-eye"></div>
-                        <div class="goldfish-tail"></div>
-                        <div class="goldfish-fin"></div>
-                    </div>
+                    <div class="goldfish-body"></div>
                 `;
 
                 this.overlay.appendChild(goldfish);
