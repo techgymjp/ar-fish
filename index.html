@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金魚ARカメラ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* ミラー効果 */
+        }
+
+        #ar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            perspective: 1000px;
+        }
+
+        .goldfish {
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            transition: all 0.5s ease-in-out;
+            transform-style: preserve-3d;
+        }
+
+        .goldfish-body {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b35, #ffa500, #ff8c00);
+            border-radius: 50% 10% 50% 10%;
+            position: relative;
+            box-shadow: 0 0 15px rgba(255, 165, 0, 0.6);
+            animation: swim 3s ease-in-out infinite;
+        }
+
+        .goldfish-tail {
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 25px;
+            background: linear-gradient(45deg, #ff8c00, #ff6b35);
+            border-radius: 0 50% 50% 0;
+            animation: tail-wave 1s ease-in-out infinite;
+        }
+
+        .goldfish-eye {
+            position: absolute;
+            left: 10px;
+            top: 12px;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #000 30%, #fff 40%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .goldfish-fin {
+            position: absolute;
+            bottom: -8px;
+            left: 15px;
+            width: 12px;
+            height: 15px;
+            background: linear-gradient(45deg, rgba(255, 140, 0, 0.7), rgba(255, 107, 53, 0.7));
+            border-radius: 50% 0 50% 0;
+            animation: fin-wave 1.5s ease-in-out infinite;
+        }
+
+        @keyframes swim {
+            0%, 100% { transform: translateY(0px) rotateY(0deg); }
+            50% { transform: translateY(-5px) rotateY(5deg); }
+        }
+
+        @keyframes tail-wave {
+            0%, 100% { transform: translateY(-50%) rotateZ(0deg); }
+            50% { transform: translateY(-50%) rotateZ(-10deg); }
+        }
+
+        @keyframes fin-wave {
+            0%, 100% { transform: rotateZ(0deg); }
+            50% { transform: rotateZ(15deg); }
+        }
+
+        .bubble {
+            position: absolute;
+            background: radial-gradient(circle, rgba(173, 216, 230, 0.6), rgba(173, 216, 230, 0.2));
+            border-radius: 50%;
+            animation: bubble-float 4s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes bubble-float {
+            0% {
+                opacity: 0.8;
+                transform: translateY(0px) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(1.5);
+            }
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .control-btn {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 25px;
+            color: #333;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.05);
+        }
+
+        #start-btn {
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .water-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(0, 150, 255, 0.05) 50%,
+                transparent 70%
+            );
+            animation: water-shimmer 8s ease-in-out infinite;
+        }
+
+        @keyframes water-shimmer {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <video id="video" autoplay muted playsinline></video>
+        
+        <div id="ar-overlay">
+            <div class="water-effect"></div>
+        </div>
+
+        <div id="loading">
+            📱 カメラを起動中...
+        </div>
+
+        <div id="controls">
+            <button id="start-btn" class="control-btn">🐟 金魚を追加</button>
+            <button id="clear-btn" class="control-btn">🗑️ クリア</button>
+            <button id="toggle-camera" class="control-btn">📷 カメラ切替</button>
+        </div>
+    </div>
+
+    <script>
+        class GoldfishAR {
+            constructor() {
+                this.video = document.getElementById('video');
+                this.overlay = document.getElementById('ar-overlay');
+                this.loading = document.getElementById('loading');
+                this.goldfish = [];
+                this.bubbles = [];
+                this.currentCamera = 'user'; // 'user' for front, 'environment' for back
+                
+                this.init();
+            }
+
+            async init() {
+                try {
+                    await this.setupCamera();
+                    await this.startCamera();
+                    this.setupControls();
+                    this.startAnimation();
+                    this.loading.style.display = 'none';
+                } catch (error) {
+                    console.error('カメラの初期化に失敗:', error);
+                    this.loading.textContent = 'カメラにアクセスできません 😞';
+                }
+            }
+
+            async setupCamera() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('カメラAPIがサポートされていません');
+                }
+            }
+
+            async startCamera() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: this.currentCamera,
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }
+                    });
+                    
+                    this.video.srcObject = stream;
+                    await this.video.play();
+                } catch (error) {
+                    console.error('カメラの起動に失敗:', error);
+                    throw error;
+                }
+            }
+
+            setupControls() {
+                document.getElementById('start-btn').addEventListener('click', () => {
+                    this.addGoldfish();
+                });
+
+                document.getElementById('clear-btn').addEventListener('click', () => {
+                    this.clearAll();
+                });
+
+                document.getElementById('toggle-camera').addEventListener('click', () => {
+                    this.toggleCamera();
+                });
+
+                // タップで金魚を追加
+                this.overlay.addEventListener('click', (e) => {
+                    const x = (e.clientX / window.innerWidth) * 100;
+                    const y = (e.clientY / window.innerHeight) * 100;
+                    this.addGoldfish(x, y);
+                });
+            }
+
+            addGoldfish(x = null, y = null) {
+                const goldfish = document.createElement('div');
+                goldfish.className = 'goldfish';
+                
+                // ランダムな位置に配置（指定がない場合）
+                const posX = x !== null ? x : Math.random() * 80 + 10;
+                const posY = y !== null ? y : Math.random() * 60 + 20;
+                
+                goldfish.style.left = `${posX}%`;
+                goldfish.style.top = `${posY}%`;
+                
+                goldfish.innerHTML = `
+                    <div class="goldfish-body">
+                        <div class="goldfish-eye"></div>
+                        <div class="goldfish-tail"></div>
+                        <div class="goldfish-fin"></div>
+                    </div>
+                `;
+
+                this.overlay.appendChild(goldfish);
+                this.goldfish.push({
+                    element: goldfish,
+                    x: posX,
+                    y: posY,
+                    directionX: (Math.random() - 0.5) * 2,
+                    directionY: (Math.random() - 0.5) * 2,
+                    speed: Math.random() * 0.5 + 0.3
+                });
+
+                // 泡を生成
+                setTimeout(() => this.createBubble(posX, posY), Math.random() * 2000);
+            }
+
+            createBubble(x, y) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                
+                const size = Math.random() * 10 + 5;
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.left = `${x}%`;
+                bubble.style.top = `${y}%`;
+                
+                this.overlay.appendChild(bubble);
+                
+                // 4秒後に泡を削除
+                setTimeout(() => {
+                    if (bubble.parentNode) {
+                        bubble.parentNode.removeChild(bubble);
+                    }
+                }, 4000);
+            }
+
+            moveGoldfish() {
+                this.goldfish.forEach((fish, index) => {
+                    // 境界での反射
+                    if (fish.x <= 5 || fish.x >= 90) fish.directionX *= -1;
+                    if (fish.y <= 10 || fish.y >= 80) fish.directionY *= -1;
+                    
+                    // 位置更新
+                    fish.x += fish.directionX * fish.speed;
+                    fish.y += fish.directionY * fish.speed;
+                    
+                    // 境界内に制限
+                    fish.x = Math.max(5, Math.min(90, fish.x));
+                    fish.y = Math.max(10, Math.min(80, fish.y));
+                    
+                    // DOM更新
+                    fish.element.style.left = `${fish.x}%`;
+                    fish.element.style.top = `${fish.y}%`;
+                    
+                    // 方向に応じて金魚を回転
+                    const rotation = Math.atan2(fish.directionY, fish.directionX) * 180 / Math.PI;
+                    fish.element.style.transform = `rotate(${rotation}deg)`;
+                    
+                    // ランダムに泡を生成
+                    if (Math.random() < 0.002) {
+                        this.createBubble(fish.x, fish.y);
+                    }
+                });
+            }
+
+            startAnimation() {
+                const animate = () => {
+                    this.moveGoldfish();
+                    requestAnimationFrame(animate);
+                };
+                animate();
+            }
+
+            clearAll() {
+                this.goldfish.forEach(fish => {
+                    if (fish.element.parentNode) {
+                        fish.element.parentNode.removeChild(fish.element);
+                    }
+                });
+                this.goldfish = [];
+                
+                // 泡も削除
+                const bubbles = this.overlay.querySelectorAll('.bubble');
+                bubbles.forEach(bubble => {
+                    if (bubble.parentNode) {
+                        bubble.parentNode.removeChild(bubble);
+                    }
+                });
+            }
+
+            async toggleCamera() {
+                try {
+                    // 現在のストリームを停止
+                    if (this.video.srcObject) {
+                        this.video.srcObject.getTracks().forEach(track => track.stop());
+                    }
+                    
+                    // カメラを切り替え
+                    this.currentCamera = this.currentCamera === 'user' ? 'environment' : 'user';
+                    
+                    // 新しいカメラでストリームを開始
+                    await this.startCamera();
+                } catch (error) {
+                    console.error('カメラの切り替えに失敗:', error);
+                    // 元のカメラに戻す
+                    this.currentCamera = this.currentCamera === 'user' ? 'environment' : 'user';
+                    await this.startCamera();
+                }
+            }
+        }
+
+        // アプリケーション開始
+        document.addEventListener('DOMContentLoaded', () => {
+            new GoldfishAR();
+        });
+
+        // ページを離れる時にカメラを停止
+        window.addEventListener('beforeunload', () => {
+            const video = document.getElementById('video');
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
